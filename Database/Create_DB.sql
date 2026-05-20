@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS receipts (
     sent_at DATETIME,
 
     UNIQUE KEY uq_receipts_tenant_receipt (tenant_id, receipt_id),
-    UNIQUE KEY uq_receipts_transaction (transaction_id),
+    UNIQUE KEY uq_receipts_tenant_transaction (tenant_id, transaction_id),
     UNIQUE KEY uq_receipts_code (receipt_code),
     KEY idx_receipts_tenant_generated (tenant_id, generated_at),
     KEY idx_receipts_tenant_email_status (tenant_id, email_status),
