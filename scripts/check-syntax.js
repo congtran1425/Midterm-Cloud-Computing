@@ -1,14 +1,18 @@
-import { readdirSync, statSync } from 'fs';
+import { existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { spawnSync } from 'child_process';
 
-const roots = ['src', 'scripts', 'public'];
+const roots = ['src', 'scripts', 'frontend'];
 const files = [];
 
 const collect = (dir) => {
   for (const entry of readdirSync(dir)) {
     const fullPath = join(dir, entry);
     const stat = statSync(fullPath);
+
+    if (entry === 'dist' || entry === 'node_modules') {
+      continue;
+    }
 
     if (stat.isDirectory()) {
       collect(fullPath);
@@ -19,7 +23,9 @@ const collect = (dir) => {
 };
 
 for (const root of roots) {
-  collect(root);
+  if (existsSync(root)) {
+    collect(root);
+  }
 }
 
 let failed = false;

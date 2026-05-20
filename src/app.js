@@ -1,5 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -15,7 +16,7 @@ import { env, isProduction } from './config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const publicDir = path.resolve(__dirname, '..', 'public');
+const frontendDistDir = path.resolve(__dirname, '..', 'frontend', 'dist');
 
 export const app = express();
 
@@ -40,14 +41,24 @@ app.use('/api/tenant/products', productRouter);
 app.use('/api/tenant/users', tenantUserRouter);
 app.use('/api/tenant/transactions', transactionRouter);
 
-app.use(express.static(publicDir));
+if (existsSync(frontendDistDir)) {
+  app.use(express.static(frontendDistDir));
+}
 
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
   }
 
-  return res.sendFile(path.join(publicDir, 'index.html'));
+  const indexFile = path.join(frontendDistDir, 'index.html');
+
+  if (!existsSync(indexFile)) {
+    return res.status(503).json({
+      message: 'Frontend is not built yet. Run npm.cmd run build or use npm.cmd run client:dev during development.'
+    });
+  }
+
+  return res.sendFile(indexFile);
 });
 
 app.use(notFoundHandler);

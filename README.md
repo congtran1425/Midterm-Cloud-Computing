@@ -18,13 +18,28 @@ npm.cmd install
 npm.cmd run seed
 ```
 
-5. Start the app:
+5. Start the backend API:
 
 ```powershell
 npm.cmd run dev
 ```
 
-Open `http://localhost:3000`.
+6. Start the React frontend in a second terminal:
+
+```powershell
+npm.cmd run client:dev
+```
+
+Open `http://localhost:5173`.
+
+For a production-style local run:
+
+```powershell
+npm.cmd run build
+npm.cmd start
+```
+
+Then open `http://localhost:3000`.
 
 ## Demo Accounts
 
