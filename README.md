@@ -41,6 +41,10 @@ npm.cmd start
 
 Then open `http://localhost:3000`.
 
+## AWS Deployment
+
+See [DEPLOY_AWS.md](DEPLOY_AWS.md) for a step-by-step deployment guide using `EC2 + RDS + Nginx + PM2`, with optional `AWS SES` SMTP for receipt emails.
+
 ## Demo Accounts
 
 After running the seed script:
