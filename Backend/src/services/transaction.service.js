@@ -4,7 +4,7 @@ import { applyInventoryChange } from './inventory.service.js';
 import { sendReceiptEmail } from './mail.service.js';
 import { getReceiptPayload, makeReceiptCode } from './receipt.service.js';
 
-const PAYMENT_METHODS = new Set(['CASH', 'BANK_TRANSFER']);
+const PAYMENT_METHODS = new Set(['CASH', 'BANK_CARD', 'BANK_TRANSFER', 'E_WALLET']);
 
 const normalizeItems = (items = []) => {
   if (!Array.isArray(items) || items.length === 0) {

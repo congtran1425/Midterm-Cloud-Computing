@@ -4,6 +4,7 @@ import {
   Building2,
   LayoutDashboard,
   LogOut,
+  Package,
   Receipt,
   ShoppingCart,
   Users
@@ -19,6 +20,7 @@ const navConfig = {
     { id: 'pos', label: 'POS', icon: ShoppingCart },
     { id: 'products', label: 'Products', icon: Box },
     { id: 'transactions', label: 'Transactions', icon: Receipt },
+    { id: 'inventory', label: 'Inventory', icon: Package, adminOnly: true },
     { id: 'team', label: 'Team', icon: Users, adminOnly: true }
   ]
 };

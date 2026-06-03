@@ -4,7 +4,7 @@ import Toast from './components/Toast.jsx';
 import { clearSession, loadSession, request, saveSession } from './lib/api.js';
 import LoginPage from './pages/LoginPage.jsx';
 import { PlatformOverview, PlatformUsersPage, TenantsPage } from './pages/PlatformPages.jsx';
-import { PosPage, ProductsPage, TeamPage, TransactionsPage } from './pages/TenantPages.jsx';
+import { InventoryPage, PaymentCheckoutPage, PosPage, ProductsPage, TeamPage, TransactionsPage } from './pages/TenantPages.jsx';
 
 const VIEW_KEY = 'cloud_pos_view';
 
@@ -18,6 +18,7 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [booting, setBooting] = useState(Boolean(initialSession.token));
   const [selectedTransactionId, setSelectedTransactionId] = useState(null);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   const showToast = (message) => {
     setToast(message);
@@ -76,6 +77,20 @@ export default function App() {
     }
 
     if (view === 'products') return <ProductsPage {...commonProps} />;
+    if (view === 'inventory') return <InventoryPage {...commonProps} />;
+    if (view === 'checkout') {
+      return (
+        <PaymentCheckoutPage
+          {...commonProps}
+          orderId={selectedOrderId}
+          onPaymentComplete={(transactionId) => {
+            setSelectedTransactionId(transactionId);
+            updateView('transactions');
+          }}
+          onGoBack={() => updateView('pos')}
+        />
+      );
+    }
     if (view === 'transactions') {
       return (
         <TransactionsPage
@@ -90,9 +105,9 @@ export default function App() {
     return (
       <PosPage
         {...commonProps}
-        onReceiptCreated={(transactionId) => {
-          setSelectedTransactionId(transactionId);
-          updateView('transactions');
+        onOrderCreated={(orderId) => {
+          setSelectedOrderId(orderId);
+          updateView('checkout');
         }}
       />
     );
