@@ -41,8 +41,6 @@ export const listInventoryMovements = ({ tenantId, productId = null, limit = 100
     params.push(productId);
   }
 
-  params.push(Number(limit) || 100);
-
   return query(
     `SELECT
         im.movement_id,
@@ -68,7 +66,7 @@ export const listInventoryMovements = ({ tenantId, productId = null, limit = 100
        AND u.user_id = im.user_id
       WHERE ${filters.join(' AND ')}
       ORDER BY im.created_at DESC
-      LIMIT ?`,
+      LIMIT ${Number(limit) || 100}`,
     params
   );
 };
