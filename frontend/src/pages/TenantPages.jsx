@@ -641,12 +641,14 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
     
     setCancelling(true);
     try {
-      const response = await apiCall(`/api/tenant/orders/${orderId}/cancel`, {
+      await apiCall(`/api/tenant/orders/${orderId}/cancel`, {
         method: 'POST',
         body: { reason: 'Cancelled at checkout' }
       });
-      setOrder(response.order);
+      
+      sessionStorage.removeItem('pos_cart');
       showToast('Order cancelled');
+      onGoBack();
     } catch (error) {
       showToast(error.message);
     } finally {
