@@ -648,12 +648,12 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
 
   if (receipt) {
     return (
-      <section className="panel wide-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <section className="panel wide-panel payment-success-panel">
         <div className="panel-heading">
           <h2>Payment Successful</h2>
         </div>
         <ReceiptView receipt={receipt} apiCall={apiCall} showToast={showToast} reload={() => {}} />
-        <div className="button-row" style={{ marginTop: '1rem', padding: '1rem', borderTop: '1px solid var(--border)' }}>
+        <div className="button-row payment-actions">
           <button className="button primary" onClick={onGoBack} type="button">
             Back to POS
           </button>
@@ -667,13 +667,13 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
 
   return (
     <section className="split-layout">
-      <section className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
+      <section className="panel order-panel">
         <div className="panel-heading">
           <h2>Checkout Order #{order.transaction_id}</h2>
           <StatusBadge status={order.order_status} />
         </div>
         
-        <div className="cart-list" style={{ marginTop: '1rem', flex: 1 }}>
+        <div className="cart-list order-items">
           {order.items?.map((item) => (
             <div className="cart-line" key={item.detail_id || item.product_id}>
               <div>
@@ -685,12 +685,12 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
           ))}
         </div>
         
-        <div className="sale-total" style={{ borderTop: '2px dashed var(--border)' }}>
+        <div className="sale-total order-total">
           <span>Total</span>
-          <strong style={{ fontSize: '1.5rem' }}>{money(order.total_amount)}</strong>
+          <strong>{money(order.total_amount)}</strong>
         </div>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <div className="checkout-back">
           <button className="button subtle" onClick={onGoBack} type="button">
             <ArrowLeft size={16} /> Back to POS
           </button>
@@ -705,7 +705,7 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
         {(order.order_status === 'CANCELLED') ? (
           <EmptyState>This order has been cancelled.</EmptyState>
         ) : (
-          <form className="form-stack" onSubmit={handlePayment} style={{ marginTop: '1rem' }}>
+          <form className="form-stack payment-form" onSubmit={handlePayment}>
             <Field label="Payment Method">
               <select 
                 name="paymentMethod" 
@@ -736,9 +736,9 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
                   />
                 </Field>
                 {Number(amountGiven) >= order.total_amount && (
-                  <div className="sale-total" style={{ borderTop: 'none', paddingTop: 0, paddingBottom: '1rem' }}>
+                  <div className="sale-total change-due">
                     <span>Change Due</span>
-                    <strong style={{ color: 'var(--success)', fontSize: '1.25rem' }}>
+                    <strong>
                       {money(Number(amountGiven) - order.total_amount)}
                     </strong>
                   </div>
@@ -747,22 +747,19 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
             )}
 
             {selectedMethod === 'BANK_CARD' && (
-              <div style={{ padding: '1rem', background: 'var(--bg-hover)', borderRadius: '8px', marginBottom: '1rem', border: '1px solid var(--border)' }}>
-                <p style={{ margin: 0, color: 'var(--text)' }}>
-                  💳 Please use the POS terminal to swipe the customer's card.
-                </p>
+              <div className="payment-note">
+                <p>Please use the POS terminal to swipe the customer's card.</p>
               </div>
             )}
 
             {(selectedMethod === 'BANK_TRANSFER' || selectedMethod === 'E_WALLET') && (
-              <div style={{ textAlign: 'center', marginBottom: '1rem', padding: '1rem', background: 'var(--bg-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <p style={{ marginTop: 0, marginBottom: '0.5rem', color: 'var(--text)' }}>
+              <div className="qr-panel">
+                <p>
                   Scan QR to pay <strong>{money(order.total_amount)}</strong>
                 </p>
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ORDER_${order.transaction_id}_${order.total_amount}`} 
                   alt="QR Code" 
-                  style={{ borderRadius: '8px', border: '1px solid var(--border)', display: 'inline-block' }} 
                 />
               </div>
             )}
@@ -798,7 +795,7 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
                 <CreditCard size={18} />
                 {submitting ? 'Processing...' : 'Confirm Payment'}
               </button>
-              <button className="button subtle danger" disabled={submitting || cancelling} onClick={handleCancel} type="button" style={{ color: 'var(--danger)' }}>
+              <button className="button subtle danger" disabled={submitting || cancelling} onClick={handleCancel} type="button">
                 {cancelling ? 'Cancelling...' : 'Cancel Order'}
               </button>
             </div>
@@ -936,7 +933,7 @@ export function InventoryPage({ apiCall, showToast }) {
           <EmptyState>Select a product to adjust stock.</EmptyState>
         )}
         
-        <div className="panel-heading" style={{ marginTop: '2rem' }}>
+        <div className="panel-heading movement-heading">
           <h2>Recent Movements</h2>
         </div>
         {movements.length ? (
@@ -953,7 +950,7 @@ export function InventoryPage({ apiCall, showToast }) {
                 {movements.slice(0, 10).map((mov) => (
                   <tr key={mov.movement_id}>
                     <td>{mov.product_name}</td>
-                    <td style={{ color: mov.quantity_change > 0 ? 'var(--primary)' : 'var(--danger)' }}>
+                    <td className={mov.quantity_change > 0 ? 'stock-positive' : 'stock-negative'}>
                       {mov.quantity_change > 0 ? '+' : ''}{mov.quantity_change}
                     </td>
                     <td><StatusBadge status={mov.movement_type} /></td>
