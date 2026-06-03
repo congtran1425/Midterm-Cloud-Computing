@@ -667,13 +667,13 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
 
   return (
     <section className="split-layout">
-      <section className="panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <section className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="panel-heading">
           <h2>Checkout Order #{order.transaction_id}</h2>
           <StatusBadge status={order.order_status} />
         </div>
         
-        <div className="cart-list" style={{ marginTop: '1rem' }}>
+        <div className="cart-list" style={{ marginTop: '1rem', flex: 1 }}>
           {order.items?.map((item) => (
             <div className="cart-line" key={item.detail_id || item.product_id}>
               <div>
@@ -685,9 +685,21 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
           ))}
         </div>
         
-        <div className="sale-total">
+        <div className="sale-total" style={{ borderTop: '2px dashed var(--border)' }}>
           <span>Total</span>
-          <strong>{money(order.total_amount)}</strong>
+          <strong style={{ fontSize: '1.5rem' }}>{money(order.total_amount)}</strong>
+        </div>
+
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <button className="button subtle" onClick={onGoBack} type="button">
+            <ArrowLeft size={16} /> Back to POS
+          </button>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <h2>Payment Details</h2>
         </div>
 
         {(order.order_status === 'CANCELLED') ? (
@@ -756,13 +768,17 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
             )}
 
             
-            <Field label="Payment Reference (optional)">
-              <input name="paymentReference" placeholder="e.g. Bank transfer ID" />
-            </Field>
+            {selectedMethod !== 'CASH' && (
+              <>
+                <Field label="Payment Reference (optional)">
+                  <input name="paymentReference" placeholder="e.g. Bank transfer ID" />
+                </Field>
 
-            <Field label="Note (optional)">
-              <input name="paymentNote" />
-            </Field>
+                <Field label="Note (optional)">
+                  <input name="paymentNote" />
+                </Field>
+              </>
+            )}
 
             <Field label="Customer Email">
               <input name="recipientEmail" type="email" defaultValue={order.customer_email || ''} />
@@ -788,12 +804,6 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
             </div>
           </form>
         )}
-        
-        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-          <button className="button subtle" onClick={onGoBack} type="button">
-            <ArrowLeft size={16} /> Back to POS
-          </button>
-        </div>
       </section>
     </section>
   );
