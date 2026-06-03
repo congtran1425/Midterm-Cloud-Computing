@@ -44,6 +44,7 @@ export default function App() {
   const handleLogout = () => {
     clearSession();
     localStorage.removeItem(VIEW_KEY);
+    sessionStorage.removeItem('pos_cart');
     setToken(null);
     setUser(null);
     setSelectedTransactionId(null);
@@ -84,6 +85,7 @@ export default function App() {
           {...commonProps}
           orderId={selectedOrderId}
           onPaymentComplete={(transactionId) => {
+            sessionStorage.removeItem('pos_cart');
             setSelectedTransactionId(transactionId);
             updateView('transactions');
           }}

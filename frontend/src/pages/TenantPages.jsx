@@ -68,7 +68,18 @@ function CartLine({ item, onChange, onRemove }) {
 export function PosPage({ apiCall, showToast, onOrderCreated }) {
   const [products, setProducts] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('pos_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('pos_cart', JSON.stringify(cart));
+  }, [cart]);
   const [search, setSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -144,7 +155,6 @@ export function PosPage({ apiCall, showToast, onOrderCreated }) {
         }
       });
 
-      setCart([]);
       showToast('Order created');
       onOrderCreated(response.order.transaction_id);
     } catch (error) {
@@ -219,8 +229,8 @@ export function PosPage({ apiCall, showToast, onOrderCreated }) {
               <Check size={18} />
               {submitting ? 'Creating...' : 'Create order'}
             </button>
-            <button className="button subtle" disabled={!cart.length} onClick={() => setCart([])} type="button">
-              Clear
+            <button className="button subtle danger" disabled={!cart.length} onClick={() => setCart([])} type="button">
+              Remove all
             </button>
           </div>
         </form>
