@@ -570,6 +570,8 @@ export function TeamPage({ apiCall, showToast }) {
 export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComplete, onGoBack }) {
   const [order, setOrder] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState('');
+  const [amountGiven, setAmountGiven] = useState('');
   const [receipt, setReceipt] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -586,7 +588,11 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
     ])
       .then(([orderRes, pmRes]) => {
         setOrder(orderRes.order);
-        setPaymentMethods(pmRes.paymentMethods || ['CASH', 'BANK_CARD', 'BANK_TRANSFER', 'E_WALLET']);
+        const pms = pmRes.paymentMethods || ['CASH', 'BANK_CARD', 'BANK_TRANSFER', 'E_WALLET'];
+        setPaymentMethods(pms);
+        if (pms.length > 0) {
+          setSelectedMethod(typeof pms[0] === 'string' ? pms[0] : pms[0].value);
+        }
       })
       .catch((err) => {
         showToast(err.message);
@@ -689,7 +695,12 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
         ) : (
           <form className="form-stack" onSubmit={handlePayment} style={{ marginTop: '1rem' }}>
             <Field label="Payment Method">
-              <select name="paymentMethod" required>
+              <select 
+                name="paymentMethod" 
+                required 
+                value={selectedMethod} 
+                onChange={(e) => setSelectedMethod(e.target.value)}
+              >
                 {paymentMethods.map(pm => {
                   const val = typeof pm === 'string' ? pm : pm.value;
                   const lbl = typeof pm === 'string' ? pm.replace('_', ' ') : pm.label;
@@ -697,6 +708,53 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
                 })}
               </select>
             </Field>
+
+            {selectedMethod === 'CASH' && (
+              <>
+                <Field label="Amount Given by Customer">
+                  <input 
+                    name="amountGiven"
+                    type="number" 
+                    min={order.total_amount} 
+                    step="0.01" 
+                    placeholder="Enter amount" 
+                    value={amountGiven}
+                    onChange={(e) => setAmountGiven(e.target.value)}
+                    required 
+                  />
+                </Field>
+                {Number(amountGiven) >= order.total_amount && (
+                  <div className="sale-total" style={{ borderTop: 'none', paddingTop: 0, paddingBottom: '1rem' }}>
+                    <span>Change Due</span>
+                    <strong style={{ color: 'var(--success)', fontSize: '1.25rem' }}>
+                      {money(Number(amountGiven) - order.total_amount)}
+                    </strong>
+                  </div>
+                )}
+              </>
+            )}
+
+            {selectedMethod === 'BANK_CARD' && (
+              <div style={{ padding: '1rem', background: 'var(--bg-hover)', borderRadius: '8px', marginBottom: '1rem', border: '1px solid var(--border)' }}>
+                <p style={{ margin: 0, color: 'var(--text)' }}>
+                  💳 Please use the POS terminal to swipe the customer's card.
+                </p>
+              </div>
+            )}
+
+            {(selectedMethod === 'BANK_TRANSFER' || selectedMethod === 'E_WALLET') && (
+              <div style={{ textAlign: 'center', marginBottom: '1rem', padding: '1rem', background: 'var(--bg-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <p style={{ marginTop: 0, marginBottom: '0.5rem', color: 'var(--text)' }}>
+                  Scan QR to pay <strong>{money(order.total_amount)}</strong>
+                </p>
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ORDER_${order.transaction_id}_${order.total_amount}`} 
+                  alt="QR Code" 
+                  style={{ borderRadius: '8px', border: '1px solid var(--border)', display: 'inline-block' }} 
+                />
+              </div>
+            )}
+
             
             <Field label="Payment Reference (optional)">
               <input name="paymentReference" placeholder="e.g. Bank transfer ID" />
@@ -716,7 +774,11 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
             </label>
 
             <div className="button-row">
-              <button className="button primary" disabled={submitting || cancelling} type="submit">
+              <button 
+                className="button primary" 
+                disabled={submitting || cancelling || (selectedMethod === 'CASH' && Number(amountGiven) < order.total_amount)} 
+                type="submit"
+              >
                 <CreditCard size={18} />
                 {submitting ? 'Processing...' : 'Confirm Payment'}
               </button>
