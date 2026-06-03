@@ -98,7 +98,12 @@ CREATE TABLE IF NOT EXISTS sales_transactions (
     customer_email VARCHAR(100),
     subtotal DECIMAL(10, 2) NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
-    payment_status ENUM('PAID', 'UNPAID') NOT NULL DEFAULT 'PAID',
+    order_status ENUM('AWAITING_PAYMENT', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'AWAITING_PAYMENT',
+    payment_status ENUM('PENDING', 'PAID', 'FAILED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+    payment_method ENUM('CASH', 'BANK_TRANSFER') NULL,
+    payment_reference VARCHAR(100),
+    payment_note VARCHAR(255),
+    paid_at DATETIME,
     transaction_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -150,6 +155,41 @@ CREATE TABLE IF NOT EXISTS transaction_details (
     CONSTRAINT chk_transaction_details_quantity_positive CHECK (quantity > 0),
     CONSTRAINT chk_transaction_details_unit_price_non_negative CHECK (unit_price >= 0),
     CONSTRAINT chk_transaction_details_line_total_non_negative CHECK (line_total >= 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS inventory_movements (
+    movement_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL,
+    product_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    movement_type ENUM('ORDER_CREATED', 'ORDER_CANCELLED', 'SALE', 'ADJUSTMENT', 'RESTOCK', 'REFUND') NOT NULL,
+    quantity_change INT NOT NULL,
+    quantity_before INT NOT NULL,
+    quantity_after INT NOT NULL,
+    reference_type ENUM('TRANSACTION', 'MANUAL') NOT NULL DEFAULT 'MANUAL',
+    reference_id INT UNSIGNED,
+    note VARCHAR(255),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_inventory_movements_tenant_movement (tenant_id, movement_id),
+    KEY idx_inventory_movements_product (tenant_id, product_id, created_at),
+    KEY idx_inventory_movements_reference (tenant_id, reference_type, reference_id),
+
+    CONSTRAINT fk_inventory_movements_product_same_tenant
+        FOREIGN KEY (tenant_id, product_id)
+        REFERENCES products (tenant_id, product_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_inventory_movements_user_same_tenant
+        FOREIGN KEY (tenant_id, user_id)
+        REFERENCES users (tenant_id, user_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_inventory_quantity_after_non_negative CHECK (quantity_after >= 0),
+    CONSTRAINT chk_inventory_quantity_before_non_negative CHECK (quantity_before >= 0),
+    CONSTRAINT chk_inventory_quantity_change_not_zero CHECK (quantity_change <> 0)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS receipts (

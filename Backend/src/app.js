@@ -7,6 +7,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { adminRouter } from './routes/admin.routes.js';
 import { authRouter } from './routes/auth.routes.js';
+import { inventoryRouter } from './routes/inventory.routes.js';
+import { orderRouter } from './routes/order.routes.js';
 import { productRouter } from './routes/product.routes.js';
 import { tenantRouter } from './routes/tenant.routes.js';
 import { tenantUserRouter } from './routes/tenant-user.routes.js';
@@ -16,7 +18,7 @@ import { env, isProduction } from './config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendDistDir = path.resolve(__dirname, '..', 'frontend', 'dist');
+const frontendDistDir = path.resolve(__dirname, '..', '..', 'frontend', 'dist');
 
 export const app = express();
 
@@ -38,6 +40,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/tenant', tenantRouter);
 app.use('/api/tenant/products', productRouter);
+app.use('/api/tenant/orders', orderRouter);
+app.use('/api/tenant/inventory', inventoryRouter);
 app.use('/api/tenant/users', tenantUserRouter);
 app.use('/api/tenant/transactions', transactionRouter);
 

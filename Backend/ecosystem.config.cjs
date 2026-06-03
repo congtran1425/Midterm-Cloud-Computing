@@ -1,9 +1,11 @@
+const path = require('path');
+
 module.exports = {
   apps: [
     {
       name: 'cloud-pos-saas',
-      script: 'src/server.js',
-      cwd: __dirname,
+      script: 'Backend/src/server.js',
+      cwd: path.resolve(__dirname, '..'),
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

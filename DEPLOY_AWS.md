@@ -21,7 +21,7 @@ Use this setup:
   - allow `80` and `443` from the internet
   - allow `3000` only from the EC2 security group if needed for internal testing, or keep it closed
 - `Nginx` receives public traffic and forwards it to `localhost:3000`
-- `PM2` runs `node src/server.js`
+- `PM2` runs `node Backend/src/server.js`
 
 This is a good fit for the current codebase because:
 
@@ -154,7 +154,13 @@ Important notes:
 Open the RDS database using MySQL Workbench or MySQL CLI, then run:
 
 ```sql
-Database/Create_DB.sql
+Backend/Database/Create_DB.sql
+```
+
+If the database already exists from an older version, run the migration scripts instead of recreating data:
+
+```sql
+Backend/Database/Update_Pos_Payment_Checkout.sql
 ```
 
 After that, seed demo data from the EC2 server:
@@ -174,7 +180,7 @@ Demo accounts created by the seed:
 This repo includes a PM2 config file, so you can start the app with:
 
 ```bash
-pm2 start ecosystem.config.cjs
+pm2 start Backend/ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
@@ -200,10 +206,10 @@ Expected response:
 
 ## 10. Configure Nginx
 
-Copy the sample config from `deploy/nginx/cloud-pos-saas.conf` into Nginx:
+Copy the sample config from `Backend/deploy/nginx/cloud-pos-saas.conf` into Nginx:
 
 ```bash
-sudo cp deploy/nginx/cloud-pos-saas.conf /etc/nginx/sites-available/cloud-pos-saas
+sudo cp Backend/deploy/nginx/cloud-pos-saas.conf /etc/nginx/sites-available/cloud-pos-saas
 sudo nano /etc/nginx/sites-available/cloud-pos-saas
 ```
 

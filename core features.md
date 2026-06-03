@@ -107,7 +107,7 @@ Purpose:
 
 ### 2.6 POS Transaction Processing
 
-The POS screen allows staff to create sales transactions.
+The POS module supports both the existing quick-sale flow and the newer separated order/payment flow.
 
 Current capabilities:
 
@@ -116,14 +116,44 @@ Current capabilities:
 - Remove items from cart.
 - Enter customer name and customer email.
 - Automatically calculate subtotal and total.
-- Complete sale.
-- Create sales transaction and transaction details.
-- Reduce stock after a sale.
-- Generate receipt after transaction completion.
+- Create an order with `AWAITING_PAYMENT` and `PENDING` status.
+- Complete legacy quick-sale transactions through the existing transaction endpoint.
+- Reduce stock when an order is created.
+- Generate receipt after successful payment.
 
 Purpose:
 
 - Covers the core POS workflow required by the assignment.
+- Supports a more realistic two-step POS workflow for future frontend checkout.
+
+### 2.6.1 Payment Checkout Flow
+
+The backend now supports a separate payment checkout step after order creation.
+
+Current capabilities:
+
+- Create order first, then process payment later.
+- Support payment methods: `CASH` and `BANK_TRANSFER`.
+- Store order status: `AWAITING_PAYMENT`, `COMPLETED`, `CANCELLED`.
+- Store payment status: `PENDING`, `PAID`, `FAILED`, `CANCELLED`.
+- Store payment method, payment reference, payment note, and paid timestamp.
+- Cancel pending orders and restore stock.
+- Generate receipt only after successful payment.
+- Keep the old quick-sale transaction endpoint as a compatibility endpoint.
+
+Main backend endpoints:
+
+- `POST /api/tenant/orders`
+- `GET /api/tenant/orders`
+- `GET /api/tenant/orders/:transactionId`
+- `POST /api/tenant/orders/:transactionId/payment`
+- `POST /api/tenant/orders/:transactionId/cancel`
+
+Purpose:
+
+- Makes POS more realistic by separating order creation from payment confirmation.
+- Allows the frontend team to build a dedicated payment checkout page.
+- Prepares the system for more payment methods in the future.
 
 ### 2.7 Receipt Generation
 
@@ -172,6 +202,32 @@ Purpose:
 
 - Allows each tenant to manage its staff accounts.
 
+### 2.9.1 Inventory Management
+
+The backend now supports inventory management and inventory movement history.
+
+Current capabilities:
+
+- View inventory product list.
+- View inventory movement history.
+- Filter inventory movement history by product.
+- Manually adjust stock for tenant admins.
+- Record stock movements when an order is created.
+- Restore stock and record movement when a pending order is cancelled.
+- Track movement type, quantity change, quantity before, quantity after, actor, reference type, reference ID, note, and timestamp.
+
+Main backend endpoints:
+
+- `GET /api/tenant/inventory/products`
+- `GET /api/tenant/inventory/movements`
+- `POST /api/tenant/inventory/adjustments`
+
+Purpose:
+
+- Makes stock changes auditable.
+- Supports the non-functional requirement for data consistency.
+- Creates a foundation for restock, refund, and supplier workflows.
+
 ### 2.10 Data Consistency and Transaction Safety
 
 The backend includes logic to protect transaction consistency.
@@ -179,9 +235,11 @@ The backend includes logic to protect transaction consistency.
 Current capabilities:
 
 - Product rows are locked during transaction creation.
-- Stock is checked before sale completion.
-- Transaction, transaction details, stock update, and receipt creation are handled inside a database transaction.
-- If transaction creation fails, database changes are rolled back.
+- Stock is checked before order creation.
+- Order creation, transaction details, stock reservation, and inventory movement records are handled inside a database transaction.
+- Payment confirmation updates payment status and receipt generation consistently.
+- Pending order cancellation restores stock inside a database transaction.
+- If order/payment/cancel logic fails, database changes are rolled back.
 
 Purpose:
 
@@ -214,7 +272,7 @@ Current capabilities:
 - Thin Express routes.
 - Business logic separated into service files.
 - Shared utilities for authentication, password hashing, errors, and SQL update helpers.
-- API endpoints for auth, admin, tenant profile, products, users, transactions, and receipts.
+- API endpoints for auth, admin, tenant profile, products, users, transactions, orders, payment checkout, inventory, and receipts.
 
 Purpose:
 
@@ -225,7 +283,9 @@ Purpose:
 
 ### 3.1 Separate Order Creation and Payment Flow
 
-Current POS flow completes a sale immediately after the cart is submitted. A stronger POS workflow would split this into two steps:
+Implementation status: Backend/API implemented. Frontend payment checkout page is pending.
+
+Current POS flow can now be split into two steps:
 
 1. Create order.
 2. Process payment.
@@ -250,9 +310,9 @@ Suggested payment methods:
 
 Suggested database changes:
 
-- Add `payment_method` to transactions, or create a separate `payments` table.
-- Add payment statuses such as `PENDING`, `PAID`, `FAILED`, `REFUNDED`, `CANCELLED`.
-- Add fields such as `paid_at`, `payment_reference`, and `payment_note`.
+- Added payment method to transactions.
+- Added payment statuses such as `PENDING`, `PAID`, `FAILED`, and `CANCELLED`.
+- Added fields such as `paid_at`, `payment_reference`, and `payment_note`.
 
 Why this is useful:
 
@@ -260,7 +320,7 @@ Why this is useful:
 - Easier to support unpaid orders, failed payments, and refunds later.
 - Improves usability because staff can review the order before payment.
 
-Priority: High
+Priority: High for frontend implementation
 
 ### 3.2 Upgrade Email Receipt Functionality
 
@@ -336,7 +396,9 @@ Priority: Medium
 
 ### 3.5 Inventory Management
 
-The current system reduces stock after sales, but inventory management can be expanded.
+Implementation status: Backend/API implemented. Frontend inventory screen is pending.
+
+The current system now records stock movement history, but inventory management can be expanded.
 
 Suggested improvements:
 
@@ -348,8 +410,8 @@ Suggested improvements:
 
 Suggested database changes:
 
-- Add `inventory_movements` table.
-- Store movement type such as `SALE`, `ADJUSTMENT`, `RESTOCK`, `REFUND`.
+- Added `inventory_movements` table.
+- Store movement type such as `ORDER_CREATED`, `ORDER_CANCELLED`, `ADJUSTMENT`, `RESTOCK`, and `REFUND`.
 
 Why this is useful:
 
@@ -541,11 +603,11 @@ Reason:
 
 Recommended tasks:
 
-- Split POS into order creation and payment.
-- Add payment screen.
-- Add payment method selection.
-- Add payment status tracking.
-- Generate receipt after successful payment.
+- Backend/API for separated order creation and payment has been added.
+- Build the React payment checkout screen.
+- Add payment method selection in the frontend.
+- Show order status and payment status clearly.
+- Generate and display receipt after successful payment.
 
 Reason:
 
@@ -595,9 +657,9 @@ Reason:
 The best next features to build are:
 
 1. Separate payment flow from POS order creation.
-2. Improve email receipt with AWS SES and better templates.
-3. Add request validation and clearer backend errors.
-4. Add payment methods and payment status.
+2. Build the frontend payment checkout screen.
+3. Improve email receipt with AWS SES and better templates.
+4. Add request validation and clearer backend errors.
 5. Add sales report and best-selling product report.
 
 These features provide the strongest balance between assignment value, real-world usefulness, and demonstration quality.
