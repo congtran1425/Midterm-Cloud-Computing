@@ -690,9 +690,11 @@ export function PaymentCheckoutPage({ apiCall, showToast, orderId, onPaymentComp
           <form className="form-stack" onSubmit={handlePayment} style={{ marginTop: '1rem' }}>
             <Field label="Payment Method">
               <select name="paymentMethod" required>
-                {paymentMethods.map(pm => (
-                  <option key={pm} value={pm}>{pm.replace('_', ' ')}</option>
-                ))}
+                {paymentMethods.map(pm => {
+                  const val = typeof pm === 'string' ? pm : pm.value;
+                  const lbl = typeof pm === 'string' ? pm.replace('_', ' ') : pm.label;
+                  return <option key={val} value={val}>{lbl}</option>;
+                })}
               </select>
             </Field>
             
