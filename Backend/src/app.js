@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { adminRouter } from './routes/admin.routes.js';
 import { authRouter } from './routes/auth.routes.js';
+import { customerRouter } from './routes/customer.routes.js';
 import { inventoryRouter } from './routes/inventory.routes.js';
 import { orderRouter } from './routes/order.routes.js';
 import { productRouter } from './routes/product.routes.js';
@@ -39,6 +40,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/tenant', tenantRouter);
+app.use('/api/tenant/customers', customerRouter);
 app.use('/api/tenant/products', productRouter);
 app.use('/api/tenant/orders', orderRouter);
 app.use('/api/tenant/inventory', inventoryRouter);

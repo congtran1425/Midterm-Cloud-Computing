@@ -17,9 +17,7 @@ orderRouter.get('/payment-methods', asyncHandler(async (_req, res) => {
   res.json({
     paymentMethods: [
       { value: 'CASH', label: 'Cash' },
-      { value: 'BANK_TRANSFER', label: 'Bank transfer' },
-      { value: 'BANK_CARD', label: 'Bank card' },
-      { value: 'E_WALLET', label: 'E-Wallet' }
+      { value: 'BANK_TRANSFER', label: 'Bank transfer' }
     ]
   });
 }));

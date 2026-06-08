@@ -73,7 +73,7 @@ export const getReceiptPayload = async ({ tenantId, receiptId, transactionId }) 
     `SELECT
         td.detail_id,
         td.product_id,
-        p.product_name,
+        td.product_name,
         p.sku,
         td.quantity,
         td.unit_price,

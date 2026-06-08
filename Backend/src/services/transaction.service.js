@@ -4,7 +4,16 @@ import { applyInventoryChange } from './inventory.service.js';
 import { sendReceiptEmail } from './mail.service.js';
 import { getReceiptPayload, makeReceiptCode } from './receipt.service.js';
 
-const PAYMENT_METHODS = new Set(['CASH', 'BANK_CARD', 'BANK_TRANSFER', 'E_WALLET']);
+const PAYMENT_METHODS = new Set(['CASH', 'BANK_TRANSFER']);
+
+const normalizeOptionalString = (value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  return normalized || null;
+};
 
 const normalizeItems = (items = []) => {
   if (!Array.isArray(items) || items.length === 0) {
@@ -39,6 +48,70 @@ const normalizePaymentMethod = (paymentMethod) => {
   }
 
   return value;
+};
+
+const resolveCustomerSnapshot = async (connection, tenantId, input) => {
+  const customerId = input.customerId ? Number(input.customerId) : null;
+  const inputName = normalizeOptionalString(input.customerName);
+  const inputEmail = normalizeOptionalString(input.customerEmail);
+  const inputPhone = normalizeOptionalString(input.customerPhone);
+
+  if (input.customerId && (!Number.isInteger(customerId) || customerId <= 0)) {
+    throw badRequest('A valid customerId is required');
+  }
+
+  if (customerId) {
+    const [customers] = await connection.execute(
+      `SELECT customer_id, full_name, email
+       FROM customers
+       WHERE tenant_id = ?
+         AND customer_id = ?`,
+      [tenantId, customerId]
+    );
+
+    const customer = customers[0];
+
+    if (!customer) {
+      throw notFound('Customer not found');
+    }
+
+    return {
+      customerId: customer.customer_id,
+      customerName: inputName || customer.full_name,
+      customerEmail: inputEmail || customer.email || null
+    };
+  }
+
+  if (inputName && inputEmail) {
+    await connection.execute(
+      `INSERT INTO customers (tenant_id, full_name, email, phone)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         full_name = VALUES(full_name),
+         phone = COALESCE(VALUES(phone), phone)`,
+      [tenantId, inputName, inputEmail, inputPhone]
+    );
+
+    const [customers] = await connection.execute(
+      `SELECT customer_id
+       FROM customers
+       WHERE tenant_id = ?
+         AND email = ?`,
+      [tenantId, inputEmail]
+    );
+
+    return {
+      customerId: customers[0]?.customer_id || null,
+      customerName: inputName,
+      customerEmail: inputEmail
+    };
+  }
+
+  return {
+    customerId: null,
+    customerName: inputName,
+    customerEmail: inputEmail
+  };
 };
 
 export const updateReceiptEmailStatus = async ({ tenantId, receiptId, status, messageId = null, error = null }) => {
@@ -157,7 +230,7 @@ export const getOrderDetail = async ({ tenantId, transactionId }) => {
     `SELECT
         td.detail_id,
         td.product_id,
-        p.product_name,
+        td.product_name,
         p.sku,
         td.quantity,
         td.unit_price,
@@ -260,11 +333,9 @@ export const getTransactionReceipt = ({ tenantId, transactionId }) => getReceipt
 
 export const createOrder = async ({ tenantId, userId, input }) => {
   const items = normalizeItems(input.items);
-  const customerId = input.customerId || null;
-  const customerName = input.customerName || null;
-  const customerEmail = input.customerEmail || null;
 
   const created = await withTransaction(async (connection) => {
+    const customer = await resolveCustomerSnapshot(connection, tenantId, input);
     const preparedItems = await prepareOrderItems(connection, tenantId, items);
     const subtotal = preparedItems.reduce((sum, item) => sum + item.lineTotal, 0);
     const totalAmount = subtotal;
@@ -273,7 +344,15 @@ export const createOrder = async ({ tenantId, userId, input }) => {
       `INSERT INTO sales_transactions
         (tenant_id, user_id, customer_id, customer_name, customer_email, subtotal, total_amount, order_status, payment_status)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'AWAITING_PAYMENT', 'PENDING')`,
-      [tenantId, userId, customerId, customerName, customerEmail, subtotal, totalAmount]
+      [
+        tenantId,
+        userId,
+        customer.customerId,
+        customer.customerName,
+        customer.customerEmail,
+        subtotal,
+        totalAmount
+      ]
     );
 
     const transactionId = transactionResult.insertId;
@@ -281,9 +360,17 @@ export const createOrder = async ({ tenantId, userId, input }) => {
     for (const item of preparedItems) {
       await connection.execute(
         `INSERT INTO transaction_details
-          (tenant_id, transaction_id, product_id, quantity, unit_price, line_total)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [tenantId, transactionId, item.productId, item.quantity, item.unitPrice, item.lineTotal]
+          (tenant_id, transaction_id, product_id, product_name, quantity, unit_price, line_total)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          tenantId,
+          transactionId,
+          item.productId,
+          item.productName,
+          item.quantity,
+          item.unitPrice,
+          item.lineTotal
+        ]
       );
 
       await applyInventoryChange(connection, {
@@ -307,6 +394,8 @@ export const createOrder = async ({ tenantId, userId, input }) => {
 export const payOrder = async ({ tenantId, transactionId, input }) => {
   const paymentMethod = normalizePaymentMethod(input.paymentMethod);
   const sendEmail = Boolean(input.sendEmail);
+  const requestedRecipientEmail = normalizeOptionalString(input.recipientEmail);
+
   const created = await withTransaction(async (connection) => {
     const [transactions] = await connection.execute(
       `SELECT transaction_id, customer_email, order_status, payment_status
@@ -343,12 +432,18 @@ export const payOrder = async ({ tenantId, transactionId, input }) => {
          AND transaction_id = ?`,
       [
         paymentMethod,
-        input.paymentReference || null,
-        input.paymentNote || null,
+        normalizeOptionalString(input.paymentReference),
+        normalizeOptionalString(input.paymentNote),
         tenantId,
         transactionId
       ]
     );
+
+    const effectiveRecipientEmail = requestedRecipientEmail || transaction.customer_email || null;
+
+    if (sendEmail && !effectiveRecipientEmail) {
+      throw badRequest('A recipient email is required when sendEmail is true');
+    }
 
     const [receipts] = await connection.execute(
       `SELECT receipt_id
@@ -360,13 +455,13 @@ export const payOrder = async ({ tenantId, transactionId, input }) => {
     );
 
     if (receipts[0]) {
-      if (input.recipientEmail) {
+      if (effectiveRecipientEmail) {
         await connection.execute(
           `UPDATE receipts
            SET recipient_email = ?
            WHERE tenant_id = ?
              AND receipt_id = ?`,
-          [input.recipientEmail, tenantId, receipts[0].receipt_id]
+          [effectiveRecipientEmail, tenantId, receipts[0].receipt_id]
         );
       }
 
@@ -377,7 +472,7 @@ export const payOrder = async ({ tenantId, transactionId, input }) => {
     const [receiptResult] = await connection.execute(
       `INSERT INTO receipts (tenant_id, transaction_id, receipt_code, recipient_email)
        VALUES (?, ?, ?, ?)`,
-      [tenantId, transactionId, receiptCode, input.recipientEmail || transaction.customer_email || null]
+      [tenantId, transactionId, receiptCode, effectiveRecipientEmail]
     );
 
     return { receiptId: receiptResult.insertId };

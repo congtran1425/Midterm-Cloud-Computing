@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS transaction_details (
     tenant_id INT UNSIGNED NOT NULL,
     transaction_id INT UNSIGNED NOT NULL,
     product_id INT UNSIGNED NOT NULL,
+    product_name VARCHAR(100) NOT NULL,
     quantity INT NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
     line_total DECIMAL(10, 2) NOT NULL,
@@ -176,6 +177,7 @@ CREATE TABLE IF NOT EXISTS transaction_details (
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
+    CONSTRAINT chk_transaction_details_product_name_not_blank CHECK (product_name <> ''),
     CONSTRAINT chk_transaction_details_quantity_positive CHECK (quantity > 0),
     CONSTRAINT chk_transaction_details_unit_price_non_negative CHECK (unit_price >= 0),
     CONSTRAINT chk_transaction_details_line_total_non_negative CHECK (line_total >= 0)
