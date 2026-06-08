@@ -120,6 +120,7 @@ export const getOrderDetail = async ({ tenantId, transactionId }) => {
         tx.transaction_id,
         tx.tenant_id,
         tx.user_id,
+        tx.customer_id,
         tx.customer_name,
         tx.customer_email,
         tx.subtotal,
@@ -203,6 +204,7 @@ export const getTransactionOverview = async (tenantId) => {
 export const listTransactions = (tenantId) => query(
   `SELECT
       tx.transaction_id,
+      tx.customer_id,
       tx.customer_name,
       tx.customer_email,
       tx.subtotal,
@@ -230,6 +232,7 @@ export const listTransactions = (tenantId) => query(
     WHERE tx.tenant_id = ?
     GROUP BY
       tx.transaction_id,
+      tx.customer_id,
       tx.customer_name,
       tx.customer_email,
       tx.subtotal,
@@ -257,6 +260,7 @@ export const getTransactionReceipt = ({ tenantId, transactionId }) => getReceipt
 
 export const createOrder = async ({ tenantId, userId, input }) => {
   const items = normalizeItems(input.items);
+  const customerId = input.customerId || null;
   const customerName = input.customerName || null;
   const customerEmail = input.customerEmail || null;
 
@@ -267,9 +271,9 @@ export const createOrder = async ({ tenantId, userId, input }) => {
 
     const [transactionResult] = await connection.execute(
       `INSERT INTO sales_transactions
-        (tenant_id, user_id, customer_name, customer_email, subtotal, total_amount, order_status, payment_status)
-       VALUES (?, ?, ?, ?, ?, ?, 'AWAITING_PAYMENT', 'PENDING')`,
-      [tenantId, userId, customerName, customerEmail, subtotal, totalAmount]
+        (tenant_id, user_id, customer_id, customer_name, customer_email, subtotal, total_amount, order_status, payment_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'AWAITING_PAYMENT', 'PENDING')`,
+      [tenantId, userId, customerId, customerName, customerEmail, subtotal, totalAmount]
     );
 
     const transactionId = transactionResult.insertId;

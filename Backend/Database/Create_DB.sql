@@ -61,6 +61,22 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT chk_users_full_name_not_blank CHECK (full_name <> '')
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE KEY uq_customers_tenant_email (tenant_id, email),
+    CONSTRAINT fk_customers_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants (tenant_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS products (
     product_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id INT UNSIGNED NOT NULL,
@@ -94,6 +110,7 @@ CREATE TABLE IF NOT EXISTS sales_transactions (
     transaction_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id INT UNSIGNED NOT NULL,
     user_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NULL,
     customer_name VARCHAR(100),
     customer_email VARCHAR(100),
     subtotal DECIMAL(10, 2) NOT NULL,
@@ -120,6 +137,12 @@ CREATE TABLE IF NOT EXISTS sales_transactions (
     CONSTRAINT fk_transactions_user_same_tenant
         FOREIGN KEY (tenant_id, user_id)
         REFERENCES users (tenant_id, user_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_transactions_customer_same_tenant
+        FOREIGN KEY (tenant_id, customer_id)
+        REFERENCES customers (tenant_id, customer_id)
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
