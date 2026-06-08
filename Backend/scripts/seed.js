@@ -98,6 +98,22 @@ const upsertProduct = async (tenantId, product) => {
   );
 };
 
+const upsertCustomer = async (tenantId, customer) => {
+  await pool.execute(
+    `INSERT INTO customers (tenant_id, full_name, email, phone)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       full_name = VALUES(full_name),
+       phone = VALUES(phone)`,
+    [
+      tenantId,
+      customer.fullName,
+      customer.email,
+      customer.phone
+    ]
+  );
+};
+
 const run = async () => {
   await upsertPlatformAdmin();
 
@@ -306,9 +322,47 @@ const run = async () => {
     }
   ];
 
+  const coffeeCustomers = [
+    {
+      fullName: 'Nguyen Minh Anh',
+      email: 'minhanh.customer@coffeehouse.local',
+      phone: '+84 901 100 201'
+    },
+    {
+      fullName: 'Tran Bao Chau',
+      email: 'baochau.customer@coffeehouse.local',
+      phone: '+84 901 100 202'
+    },
+    {
+      fullName: 'Le Hoang Nam',
+      email: 'hoangnam.customer@coffeehouse.local',
+      phone: '+84 901 100 203'
+    }
+  ];
+
+  const martCustomers = [
+    {
+      fullName: 'Pham Gia Han',
+      email: 'giahan.customer@minimart.local',
+      phone: '+84 902 200 301'
+    },
+    {
+      fullName: 'Vo Thanh Tung',
+      email: 'thanhtung.customer@minimart.local',
+      phone: '+84 902 200 302'
+    },
+    {
+      fullName: 'Dang Quynh Nhu',
+      email: 'quynhnhu.customer@minimart.local',
+      phone: '+84 902 200 303'
+    }
+  ];
+
   await Promise.all([
     ...coffeeProducts.map((product) => upsertProduct(coffeeTenantId, product)),
     ...martProducts.map((product) => upsertProduct(martTenantId, product)),
+    ...coffeeCustomers.map((customer) => upsertCustomer(coffeeTenantId, customer)),
+    ...martCustomers.map((customer) => upsertCustomer(martTenantId, customer)),
     ...tenantUsers.flatMap((tenant) => tenant.users.map((user) => (
       upsertTenantUser(tenant.tenantId, tenant.tenantCode, user)
     )))
@@ -318,6 +372,7 @@ const run = async () => {
   console.log(`Platform admin: superadmin / ${platformPassword}`);
   console.log(`Tenant users: owner / ${tenantPassword}`);
   console.log(`Tenant staff users: cashier1, cashier2, barista, stockstaff / ${staffPassword}`);
+  console.log('Seed customers: 3 per tenant.');
   console.log('Tenant codes: coffeehouse, minimart');
 };
 
