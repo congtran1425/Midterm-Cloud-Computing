@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     UNIQUE KEY uq_customers_tenant_email (tenant_id, email),
+    UNIQUE KEY uq_customers_tenant_customer (tenant_id, customer_id),
     CONSTRAINT fk_customers_tenant
         FOREIGN KEY (tenant_id)
         REFERENCES tenants (tenant_id)
