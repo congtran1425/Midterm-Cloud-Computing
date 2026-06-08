@@ -1,6 +1,6 @@
 -- Add missing unique key to customers table
 ALTER TABLE customers
-ADD UNIQUE KEY IF NOT EXISTS uq_customers_tenant_customer (tenant_id, customer_id);
+ADD UNIQUE KEY uq_customers_tenant_customer (tenant_id, customer_id);
 
 -- Retry adding the foreign key constraint
 ALTER TABLE sales_transactions
