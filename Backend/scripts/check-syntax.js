@@ -2,7 +2,7 @@ import { existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { spawnSync } from 'child_process';
 
-const roots = ['src', 'scripts', 'frontend'];
+const roots = ['Backend/src', 'Backend/scripts', 'frontend'];
 const files = [];
 
 const collect = (dir) => {

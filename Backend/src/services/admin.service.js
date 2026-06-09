@@ -52,7 +52,15 @@ export const listTenants = () => query(
       ON p.tenant_id = t.tenant_id
     LEFT JOIN sales_transactions tx
       ON tx.tenant_id = t.tenant_id
-    GROUP BY t.tenant_id
+    GROUP BY
+      t.tenant_id,
+      t.tenant_code,
+      t.tenant_name,
+      t.address,
+      t.phone,
+      t.email,
+      t.status,
+      t.created_at
     ORDER BY t.created_at DESC`
 );
 

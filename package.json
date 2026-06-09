@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "description": "Multi-tenant SaaS Point-of-Sale application for the Cloud Computing assignment.",
   "type": "module",
-  "main": "src/server.js",
+  "main": "Backend/src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node Backend/src/server.js",
+    "dev": "nodemon Backend/src/server.js",
     "client:dev": "vite --config frontend/vite.config.js",
     "build": "vite build --config frontend/vite.config.js",
     "preview": "vite preview --config frontend/vite.config.js",
-    "seed": "node scripts/seed.js",
-    "check": "node scripts/check-syntax.js"
+    "seed": "node Backend/scripts/seed.js",
+    "check": "node Backend/scripts/check-syntax.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

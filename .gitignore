@@ -6,5 +6,4 @@ npm-debug.log*
 coverage/
 dist/
 frontend/dist/
-Database/
 midterm-key.pem
