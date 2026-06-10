@@ -41,9 +41,11 @@ npm.cmd start
 
 Then open `http://localhost:3000`.
 
-## AWS Deployment
+## AWS Deployment & Demo Guide
 
-See [DEPLOY_AWS.md](DEPLOY_AWS.md) for a step-by-step deployment guide using `EC2 + RDS + Nginx + PM2`, with optional `AWS SES` SMTP for receipt emails.
+- For a step-by-step deployment guide using `EC2 + RDS + Nginx + PM2` with `AWS SES` SMTP, see [DEPLOY_AWS.md](DEPLOY_AWS.md).
+- For a comprehensive project demo and cloud architecture review, see [DEMO.md](DEMO.md) or access the live system at [https://pos.zney295.id.vn](https://pos.zney295.id.vn).
+
 
 ## Demo Accounts
 
